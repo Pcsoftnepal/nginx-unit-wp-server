@@ -1,0 +1,84 @@
+{
+    "listeners": {
+        "*:8080": {
+            "pass": "routes"
+        }
+  
+    },
+
+    "routes": [
+        {
+            "match": {
+                "uri": [
+                    "*.php",
+                    "*.php/*",
+                    "/wp-admin/",
+                    "!/wp-content/uploads/"
+                ]
+            },
+  
+            "action": {
+                "pass": "applications/wordpress/direct"
+            }
+        },
+        {
+            "match":{
+                "uri":[
+                    "/wp-content/uploads/*"
+                ]
+            },
+            "action":{
+                "share": "siteurl$uri",
+                "fallback":{
+                    "return":301,
+                    "location":"website$uri"
+                }
+                
+            }
+        },
+        {
+            "action": {
+                "share": "siteurl$uri",
+                "fallback": {
+                    "pass": "applications/wordpress/index"
+                }
+            }
+        }
+      
+    ],
+  
+    "applications": {
+        "wordpress": {
+            "type": "php",
+            "processes": {
+              "max": 15,
+              "spare": 5,
+              "idle_timeout": 180
+            },
+            "targets": {
+                "direct": {
+                    "root": "siteurl"
+                },
+  
+                "index": {
+                    "root": "siteurl",
+                    "script": "index.php"
+                }
+            },
+            "options": {
+                "file": "siteurl/server/php.ini",
+                "admin": {
+                    "memory_limit": "256M",
+                    "variables_order": "EGPCS"
+                },
+        
+                "user": {
+                    "display_errors": "1"
+                }
+            },            
+            "environment":{
+                "DEVELOPMENT": "local"
+            }
+        }
+    }
+}
