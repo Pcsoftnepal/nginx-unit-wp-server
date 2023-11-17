@@ -10,7 +10,15 @@ class PCSOFT_CLI{
 	// }
     public function server(){
         $wp = exec("which wp");
-        exec("sudo {$wp} pcsoft run --allow-root");
+        if(PHP_OS == "Darwin"): // is windows
+            exec("{$wp} pcsoft run");
+        elseif(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'):
+            $os = 'win';
+        else:
+            exec("sudo {$wp} pcsoft run --allow-root");
+        endif;
+
+        
     }
 
     public function run(){
@@ -18,41 +26,51 @@ class PCSOFT_CLI{
         /**
          * check OS of the server
          */
-        $user_agent = $_SERVER["HTTP_USER_AGENT"];
-        
-        if(strpos($user_agent, "Win") !== FALSE): // is windows
-            $os = 'win';
-        elseif(strpos($user_agent, "Mac") !== FALSE): // is mac
+
+        if(PHP_OS == "Darwin"): // is windows
             $os = 'mac';
-        else: // is linux
+        elseif(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'):
+            $os = 'win';
+        else:
             $os = 'linux';
         endif;
+        
 
         // check if nginx unit is installed or not
         $output = exec("which unitd");
+        
         if(!$output){ // not installed
+            
             if($os == 'linux'){
 
             }elseif($os == 'mac'){
-                exec('brew install unit unit-php');
+                exec("export HOMEBREW_TEMP=/tmp");
+                exec("brew update");
+
+                echo exec('brew install unit');
+                echo exec('brew install unit-php');
             }elseif($os == 'win'){
 
             }
-        }else{ //installed
+        } //installed
             $upload_path = wp_upload_dir();
             $config = file_get_contents(dirname(__FILE__).'/wordpress.json');
             $config = str_replace('siteurl',$web_root_path,$config);
             $config = str_replace('website',apply_filters("pcsoft_live_website",""),$config);
-            $tmp_config = $upload_path['basedir'].'server.json';
+            $tmp_config = $upload_path['basedir'].'/server.json';
             file_put_contents($tmp_config,$config);
-            $flags = explode('/',$web_root_path); 
-            
             exec("chmod g+x ".$web_root_path);
 
             if($os == 'win'){
 
             }elseif($os == 'mac'){
-                $socket = "/opt/homebrew/var/run/unit/control.sock";
+                $os_type = php_uname();
+                if(strpos('x86_64',$os_type) != -1){
+                    $socket = "/usr/local/var/run/unit/control.sock";
+                }else{
+                    $socket = "/opt/homebrew/var/run/unit/control.sock";
+                }
+                
                 exec("brew services stop unit");
                 exec("sudo pkill unitd");
                 $user = "root";
@@ -67,6 +85,6 @@ class PCSOFT_CLI{
             
             exec("sudo unitd --no-daemon --user ".$user." --group ".$group." --log /dev/stderr & sleep 2 && curl -X PUT --data-binary @".$tmp_config." --unix-socket ".$socket." http://localhost/config/");
             
-        }
+        
     }
 }
