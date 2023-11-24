@@ -176,7 +176,7 @@ class Server
         }
         echo exec("sudo unitd ".$daemon_txt." --user " . $user . " --group " . $group . " --log /dev/stderr");
         sleep(2);
-        echo exec("sudo curl -X PUT --data-binary @" . $this->web_root_path.'/server.json' . " --unix-socket " . $socket . " http://localhost/config/");
+        echo exec("sudo curl -X PUT --data-binary '".$this->config."' --unix-socket " . $socket . " http://localhost/config/");
     }
 
     public function runInMac(){
