@@ -1,6 +1,5 @@
-# nginx-unit-wp-server
-## Step to use this plugin ##
-- Install wp cli. Refer to this url for it's installation: https://wp-cli.org/
-- Download this plugin and extract it in your plugins folder
-- Activate by running ``wp plugin activate nginx-unit-wp-server``
-- Finally run the server using command ```wp pcsoft server```
+# php builtin local development server
+## Step to use this ##
+- download server.php file and add it to your project
+- open terminal and run command chmod +x server.php
+- then run the server.php file using ``./server.php``
