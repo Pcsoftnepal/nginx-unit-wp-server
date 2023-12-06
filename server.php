@@ -10,7 +10,7 @@ class Server
 	public $routes = "";
 
     public $phpini = true; // false if to use default php.ini or path to php.ini
-    public $live_site = "https://google.com"; // live site link, used load live site images to local
+    public $live_site = ""; // live site link, used load live site images to local
     public $configPath = "";
 
     function __construct()
