@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 class Server
 {
@@ -8,7 +7,7 @@ class Server
     
     public $worker = 20;
 	public $routes = "";
-
+    public $debug = false;
     public $phpini = true; // false if to use default php.ini or path to php.ini
     public $live_site = ""; // live site link, used load live site images to local
     public $configPath = "";
@@ -68,13 +67,41 @@ class Server
         file_put_contents($this->routes,$route_content);
     }
 
-    /***
-     * @return void
-     * config file for running in linux
-     *
-     */
-    public function runServer(){
-	    $command = "PHP_CLI_SERVER_WORKERS=".$this->worker;
+    public function startWpServer(){
+        $command = "PHP_CLI_SERVER_WORKERS=".$this->worker;
+        $command .=" ENV=local";
+        $php = exec('which php'.$this->php);
+        $wp = exec('which wp');
+        if(!$wp){
+            exec("curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar");
+            rename('wp-cli.phar',$this->configPath.'/wp-cli.phar');
+            exec("chmod +x ".$this->configPath.'/wp-cli.phar');
+            $wp = $this->configPath.'/wp-cli.phar';
+        }
+
+        if($this->debug == true){
+            $debug = "-dxdebug.mode=debug -dxdebug.start_with_request=yes";
+        }else{
+            $debug = "";
+        }
+        $command = $command ." ".$php." ".$debug." ".$wp." --port=".$this->port;
+        $command.=" --color";
+        $command.=" --debug=bootstrap";
+        $command.=" --skip-plugins";
+        $command.=" --skip-themes";
+        $command.=" server";
+        // $command.= " server.php";
+        // exec($command.' server.php');
+
+        if($this->phpini != false){
+            $command.= " --config=".$this->phpini;
+        }
+        // $command.= " --docroot= '".__DIR__."'";
+        exec($command);
+    }
+
+    public function startServer(){
+        $command = "PHP_CLI_SERVER_WORKERS=".$this->worker;
         $command.=" ENV=local";
         $php = exec('which php'.$this->php);
         $command = $command ." ".$php." -S localhost:".$this->port;
@@ -82,7 +109,24 @@ class Server
             $command = $command." -c ".$this->phpini;
         }
 
-        exec($command.' '.$this->routes);
+        //exec($command.' '.$this->routes);
+        exec($command);
+    }
+
+    /***
+     * @return void
+     * config file for running in linux
+     *
+     */
+    public function runServer(){
+        if(file_exists(__DIR__.'/wp-load.php')){
+            // THIS IS WP
+            $this->startWpServer();
+        }else{
+            // THIS IS NOT WP
+            $this->startServer();
+        }
+	    
     }
 
     public function server(){
